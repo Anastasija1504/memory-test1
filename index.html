@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Тест на пам'ять</title>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    padding-top: 60px;
+    background: linear-gradient(to bottom right, #c9e9ff, #f8f9fa);
+  }
+  #digits {
+    font-size: 3em;
+    margin: 40px;
+    min-height: 1.2em;
+    transition: opacity 0.2s ease-in-out;
+  }
+  input, button {
+    font-size: 1.2em;
+    padding: 10px 20px;
+    margin: 10px;
+    border-radius: 10px;
+    border: 2px solid #ccc;
+  }
+  button {
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    border: none;
+  }
+  button:hover { background: #0056b3; }
+  #result {
+    font-weight: bold;
+    margin-top: 20px;
+    font-size: 1.3em;
+  }
+  #final {
+    font-size: 1.5em;
+    margin-top: 30px;
+  }
+</style>
+</head>
+<body>
+
+<h2>🧠 Тест на пам'ять</h2>
+
+<!-- Початковий екран -->
+<div id="startScreen">
+  <p>Введи своє ім’я, щоб почати:</p>
+  <input type="text" id="username" placeholder="Твоє ім’я">
+  <br>
+  <button id="startBtn">Почати</button>
+</div>
+
+<!-- Екран гри -->
+<div id="gameScreen" style="display:none;">
+  <p id="level"></p>
+  <p id="digits"></p>
+
+  <input id="answer" type="text" placeholder="Введи цифри у зворотному порядку" disabled>
+  <br>
+  <button id="checkBtn" disabled>Перевірити</button>
+  <p id="result"></p>
+  <p id="final"></p>
+</div>
+
+<!-- Скрипт -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  let currentLevel = 3;
+  let round = 1;
+  let digits = "";
+  let correctAnswers = 0;
+  let playerName = "";
+
+  const digitsEl = document.getElementById("digits");
+  const inputEl = document.getElementById("answer");
+  const resultEl = document.getElementById("result");
+  const buttonEl = document.getElementById("checkBtn");
+  const levelEl = document.getElementById("level");
+  const finalEl = document.getElementById("final");
+  const startScreen = document.getElementById("startScreen");
+  const gameScreen = document.getElementById("gameScreen");
+  const startBtn = document.getElementById("startBtn");
+
+  startBtn.addEventListener("click", startGame);
+  buttonEl.addEventListener("click", check);
+
+  function startGame() {
+    const name = document.getElementById("username").value.trim();
+    if (!name) {
+      alert("Введи ім’я, будь ласка 🙂");
+      return;
+    }
+    playerName = name;
+    startScreen.style.display = "none";
+    gameScreen.style.display = "block";
+    showDigits();
+  }
+
+  function showDigits() {
+    resultEl.innerText = "";
+    inputEl.value = "";
+    inputEl.disabled = true;
+    buttonEl.disabled = true;
+    digitsEl.innerText = "";
+    finalEl.innerText = "";
+
+    levelEl.innerText = `Рівень ${currentLevel - 2} (спроба ${round}/3)`;
+
+    digits = "";
+    for (let i = 0; i < currentLevel; i++) digits += Math.floor(Math.random() * 10);
+
+    let i = 0;
+    function showNext() {
+      if (i < digits.length) {
+        digitsEl.innerText = digits[i];
+        digitsEl.style.opacity = 1;
+
+        setTimeout(() => {
+          digitsEl.style.opacity = 0;
+          setTimeout(() => {
+            i++;
+            showNext();
+          }, 300);
+        }, 800);
+      } else {
+        setTimeout(() => {
+          digitsEl.innerText = "❓";
+          digitsEl.style.opacity = 1;
+          inputEl.disabled = false;
+          buttonEl.disabled = false;
+          inputEl.focus();
+        }, 300);
+      }
+    }
+
+    showNext();
+  }
+
+  function check() {
+    const input = inputEl.value.trim();
+    const correct = digits.split("").reverse().join("");
+
+    if (input === correct) {
+      resultEl.innerText = "✅ Правильно!";
+      resultEl.style.color = "green";
+      correctAnswers++;
+    } else {
+      resultEl.innerText = `❌ Неправильно (було: ${correct})`;
+      resultEl.style.color = "red";
+    }
+
+    setTimeout(nextRound, 1500);
+  }
+
+  function nextRound() {
+    round++;
+    if (round > 3) {
+      round = 1;
+      currentLevel++;
+    }
+
+    if (currentLevel > 7) {
+      finishGame();
+    } else {
+      showDigits();
+    }
+  }
+
+  function finishGame() {
+    digitsEl.innerText = "";
+    inputEl.disabled = true;
+    buttonEl.disabled = true;
+    levelEl.innerText = "";
+    resultEl.innerText = "";
+
+    finalEl.innerHTML = `
+      🎉 <b>Гру завершено!</b><br>
+      ${playerName}, твій результат: <b>${correctAnswers} правильних із 15.</b>
+    `;
+
+    // Надсилання у Google Таблицю
+    fetch("https://script.google.com/macros/s/AKfycbxjlryvmhZq3VreJu3xTMbLgGUhWJq6gZQQtMtFQ2fvBFFk9eMTCGNppII3zO30SM7CZA/exec", {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({ name: playerName, score: correctAnswers }),
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+});
+</script>
+
+</body>
+</html>
