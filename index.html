@@ -1,196 +1,232 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8">
-<title>Тест на пам'ять</title>
-<style>
-  body {
-    font-family: sans-serif;
-    text-align: center;
-    padding-top: 60px;
-    background: linear-gradient(to bottom right, #c9e9ff, #f8f9fa);
-  }
-  #digits {
-    font-size: 3em;
-    margin: 40px;
-    min-height: 1.2em;
-    transition: opacity 0.2s ease-in-out;
-  }
-  input, button {
-    font-size: 1.2em;
-    padding: 10px 20px;
-    margin: 10px;
-    border-radius: 10px;
-    border: 2px solid #ccc;
-  }
-  button {
-    cursor: pointer;
-    background: #007bff;
-    color: white;
-    border: none;
-  }
-  button:hover { background: #0056b3; }
-  #result {
-    font-weight: bold;
-    margin-top: 20px;
-    font-size: 1.3em;
-  }
-  #final {
-    font-size: 1.5em;
-    margin-top: 30px;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Тест на пам'ять</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    #game-container { margin-top: 10vh; }
+
+    h1 {
+      font-size: 2em;
+      color: #00c6ff;
+      margin-bottom: 0.5em;
+    }
+
+    #display {
+      font-size: 4em;
+      height: 1.5em;
+      margin: 20px;
+      transition: opacity 0.2s ease-in-out;
+    }
+
+    .blink { animation: blink 0.3s ease-in-out; }
+
+    @keyframes blink {
+      0% { opacity: 0; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    input, button {
+      padding: 10px 20px;
+      font-size: 1em;
+      border-radius: 8px;
+      border: none;
+      margin: 10px;
+    }
+
+    button {
+      background-color: #00c6ff;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover { background-color: #007acc; }
+
+    #status {
+      font-size: 1.3em;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    #instruction { color: #cccccc; font-size: 1.1em; }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.5em; }
+      #display { font-size: 2.5em; }
+    }
+  </style>
 </head>
 <body>
+  <div id="game-container">
+    <h1>Тест на пам'ять</h1>
+    <p id="instruction">Введи цифри у зворотному порядку</p>
+    <p id="display"></p>
 
-<h2>🧠 Тест на пам'ять</h2>
+    <div id="name-container">
+      <input type="text" id="name" placeholder="Введи своє ім'я">
+      <br>
+      <button id="startBtn">Почати</button>
+    </div>
 
-<!-- Початковий екран -->
-<div id="startScreen">
-  <p>Введи своє ім’я, щоб почати:</p>
-  <input type="text" id="username" placeholder="Твоє ім’я">
-  <br>
-  <button id="startBtn">Почати</button>
-</div>
+    <div id="game-controls" style="display:none;">
+      <input type="text" id="answer" placeholder="Введи відповідь">
+      <button id="submitBtn">Відповісти</button>
+    </div>
 
-<!-- Екран гри -->
-<div id="gameScreen" style="display:none;">
-  <p id="level"></p>
-  <p id="digits"></p>
+    <p id="status"></p>
+  </div>
 
-  <input id="answer" type="text" placeholder="Введи цифри у зворотному порядку" disabled>
-  <br>
-  <button id="checkBtn" disabled>Перевірити</button>
-  <p id="result"></p>
-  <p id="final"></p>
-</div>
+  <script>
+    const display = document.getElementById('display');
+    const answerInput = document.getElementById('answer');
+    const submitBtn = document.getElementById('submitBtn');
+    const startBtn = document.getElementById('startBtn');
+    const status = document.getElementById('status');
+    const nameInput = document.getElementById('name');
+    const nameContainer = document.getElementById('name-container');
+    const gameControls = document.getElementById('game-controls');
 
-<!-- Скрипт -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  let currentLevel = 3;
-  let round = 1;
-  let digits = "";
-  let correctAnswers = 0;
-  let playerName = "";
+    // ТВОЙ Web App URL
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxp_FVq4iCQRf22aouTDpOwhyfBPDfV3dL6wM8qlyI779JtLi3j_7_VdkQqlNPqvyiMJw/exec";
 
-  const digitsEl = document.getElementById("digits");
-  const inputEl = document.getElementById("answer");
-  const resultEl = document.getElementById("result");
-  const buttonEl = document.getElementById("checkBtn");
-  const levelEl = document.getElementById("level");
-  const finalEl = document.getElementById("final");
-  const startScreen = document.getElementById("startScreen");
-  const gameScreen = document.getElementById("gameScreen");
-  const startBtn = document.getElementById("startBtn");
+    let sequence = [];
+    let reversed = "";
+    let currentLevel = 1;
+    let attempt = 1;
+    let correctCount = 0;
 
-  startBtn.addEventListener("click", startGame);
-  buttonEl.addEventListener("click", check);
+    const maxLevels = 5;
+    const attemptsPerLevel = 3;
+    const totalAttempts = maxLevels * attemptsPerLevel;
 
-  function startGame() {
-    const name = document.getElementById("username").value.trim();
-    if (!name) {
-      alert("Введи ім’я, будь ласка 🙂");
-      return;
-    }
-    playerName = name;
-    startScreen.style.display = "none";
-    gameScreen.style.display = "block";
-    showDigits();
-  }
-
-  function showDigits() {
-    resultEl.innerText = "";
-    inputEl.value = "";
-    inputEl.disabled = true;
-    buttonEl.disabled = true;
-    digitsEl.innerText = "";
-    finalEl.innerText = "";
-
-    levelEl.innerText = `Рівень ${currentLevel - 2} (спроба ${round}/3)`;
-
-    digits = "";
-    for (let i = 0; i < currentLevel; i++) digits += Math.floor(Math.random() * 10);
-
-    let i = 0;
-    function showNext() {
-      if (i < digits.length) {
-        digitsEl.innerText = digits[i];
-        digitsEl.style.opacity = 1;
-
-        setTimeout(() => {
-          digitsEl.style.opacity = 0;
-          setTimeout(() => {
-            i++;
-            showNext();
-          }, 300);
-        }, 800);
-      } else {
-        setTimeout(() => {
-          digitsEl.innerText = "❓";
-          digitsEl.style.opacity = 1;
-          inputEl.disabled = false;
-          buttonEl.disabled = false;
-          inputEl.focus();
-        }, 300);
+    async function showSequence() {
+      if (currentLevel > maxLevels) {
+        endGame();
+        return;
       }
+
+      display.textContent = "";
+      answerInput.disabled = true;
+      submitBtn.disabled = true;
+      status.textContent = "";
+
+      sequence = Array.from(
+        { length: 2 + currentLevel },
+        () => Math.floor(Math.random() * 10)
+      );
+      reversed = sequence.slice().reverse().join("");
+
+      for (let num of sequence) {
+        display.classList.remove("blink");
+        await new Promise(res => setTimeout(res, 400));
+        display.textContent = num;
+        display.classList.add("blink");
+        await new Promise(res => setTimeout(res, 800));
+        display.textContent = "";
+      }
+
+      answerInput.disabled = false;
+      submitBtn.disabled = false;
+      answerInput.value = "";
+      answerInput.focus();
     }
 
-    showNext();
-  }
+    function checkAnswer() {
+      const userAnswer = answerInput.value.trim();
 
-  function check() {
-    const input = inputEl.value.trim();
-    const correct = digits.split("").reverse().join("");
+      if (userAnswer === reversed) {
+        correctCount++;
+        status.textContent = "✅ Правильно!";
+        status.style.color = "lightgreen";
+      } else {
+        status.textContent = `❌ Неправильно. Було: ${reversed}`;
+        status.style.color = "red";
+      }
 
-    if (input === correct) {
-      resultEl.innerText = "✅ Правильно!";
-      resultEl.style.color = "green";
-      correctAnswers++;
-    } else {
-      resultEl.innerText = `❌ Неправильно (було: ${correct})`;
-      resultEl.style.color = "red";
+      attempt++;
+
+      if (attempt > attemptsPerLevel) {
+        currentLevel++;
+        attempt = 1;
+      }
+
+      if (currentLevel > maxLevels) {
+        setTimeout(endGame, 1200);
+        return;
+      }
+
+      status.textContent += `  (${correctCount} з ${totalAttempts} правильних)`;
+      answerInput.value = "";
+
+      setTimeout(showSequence, 1500);
     }
 
-    setTimeout(nextRound, 1500);
-  }
+    function endGame() {
+      const accuracy = Math.round((correctCount / totalAttempts) * 100);
 
-  function nextRound() {
-    round++;
-    if (round > 3) {
-      round = 1;
-      currentLevel++;
+      display.textContent = "";
+      status.style.color = "white";
+      status.textContent =
+        `Тест завершено. Правильних відповідей: ${correctCount} ` +
+        `з ${totalAttempts} (${accuracy}%).`;
+
+      answerInput.disabled = true;
+      submitBtn.disabled = true;
+      gameControls.style.display = "none";
+
+      sendResult();
     }
 
-    if (currentLevel > 7) {
-      finishGame();
-    } else {
-      showDigits();
+    function sendResult() {
+      const name = nameInput.value.trim() || "Без імені";
+
+      console.log("Sending:", { name, correct: correctCount });
+
+      fetch(scriptURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name,
+          correct: correctCount
+        })
+      })
+        .then(r => r.text())
+        .then(t => console.log("Server response:", t))
+        .catch(err => console.error("Error sending:", err));
     }
-  }
 
-  function finishGame() {
-    digitsEl.innerText = "";
-    inputEl.disabled = true;
-    buttonEl.disabled = true;
-    levelEl.innerText = "";
-    resultEl.innerText = "";
+    startBtn.addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert("Будь ласка, введи ім'я перед початком!");
+        return;
+      }
 
-    finalEl.innerHTML = `
-      🎉 <b>Гру завершено!</b><br>
-      ${playerName}, твій результат: <b>${correctAnswers} правильних із 15.</b>
-    `;
+      nameContainer.style.display = "none";
+      gameControls.style.display = "block";
 
-    // Надсилання у Google Таблицю
-    fetch("https://script.google.com/macros/s/AKfycbxjlryvmhZq3VreJu3xTMbLgGUhWJq6gZQQtMtFQ2fvBFFk9eMTCGNppII3zO30SM7CZA/exec", {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify({ name: playerName, score: correctAnswers }),
-      headers: { "Content-Type": "application/json" }
+      currentLevel = 1;
+      attempt = 1;
+      correctCount = 0;
+
+      showSequence();
     });
-  }
-});
-</script>
 
+    submitBtn.addEventListener('click', checkAnswer);
+    answerInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !answerInput.disabled) checkAnswer();
+    });
+  </script>
 </body>
 </html>
