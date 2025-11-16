@@ -3,339 +3,274 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Гра: Пам'ять чисел</title>
+  <title>Переверни послідовність — гра</title>
   <style>
-    body{
-      font-family: 'Inter', system-ui, sans-serif;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      height:100vh;
-      margin:0;
-      background:linear-gradient(135deg,#e3f2ff,#f7e9ff,#ffe9e9);
-      background-size:400% 400%;
-      animation:bg 15s ease infinite;
-    }
-    @keyframes bg{
-      0%{background-position:0% 50%;}
-      50%{background-position:100% 50%;}
-      100%{background-position:0% 50%;}
-    }
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#7dd3fc;--accent2:#a78bfa;--glass: rgba(255,255,255,0.04)}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial}
+    body{margin:0;min-height:100vh;background:linear-gradient(180deg,#071023 0%, #071a2a 60%), radial-gradient(600px 300px at 10% 20%, rgba(122,85,255,0.07), transparent);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:28px}
+    .app{width:980px;max-width:96%;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03)}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+    .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;color:#04263b;box-shadow:0 6px 20px rgba(120,63,255,0.12)}
+    h1{font-size:20px;margin:0}
+    p.lead{margin:0;color:rgba(230,238,248,0.75)}
 
-    .card{
-      background:rgba(255,255,255,0.85);
-      backdrop-filter:blur(12px);
-      padding:32px;
-      border-radius:24px;
-      box-shadow:0 10px 30px rgba(0,0,0,0.12);
-      width:450px;
-      max-width:95%;
-      animation:fadeIn .8s ease both;
-    }
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
 
-    @keyframes fadeIn{
-      from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);}
-    }
+    .card{background:var(--card);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+    .controls{display:flex;flex-direction:column;gap:10px}
+    label{font-size:13px;color:rgba(230,238,248,0.8)}
+    input[type=text]{padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;font-size:15px}
+    .btn{appearance:none;border:0;padding:11px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+    .btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#022235}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.05);color:inherit}
 
-    h1{
-      font-size:26px;
-      margin:0 0 12px;
-      text-align:center;
-      font-weight:700;
-      background:linear-gradient(90deg,#005bea,#00c6fb);
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
-    }
+    .stage{height:240px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+    .sequence-box{width:320px;height:120px;border-radius:12px;background:var(--glass);display:flex;align-items:center;justify-content:center;font-size:62px;letter-spacing:8px;color:rgba(255,255,255,0.95)}
+    .digit{width:84px;height:84px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:36px;background:transparent}
 
-    .center{text-align:center}
+    .glow{animation:glow 700ms ease-in-out;box-shadow:0 12px 40px rgba(125,211,252,0.18), inset 0 -8px 20px rgba(167,139,250,0.06)}
+    @keyframes glow{0%{transform:scale(0.9);opacity:0.2}50%{transform:scale(1.05);opacity:1}100%{transform:scale(1);opacity:1}}
 
-    #display{
-      font-size:58px;
-      font-weight:700;
-      height:90px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:#111;
-      margin-top:10px;
-      animation:pop .3s ease;
-    }
-    @keyframes pop{
-      0%{transform:scale(0.6); opacity:0;} 100%{transform:scale(1); opacity:1;}
-    }
+    .info-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);font-weight:600}
 
-    input[type=text]{
-      width:100%;
-      padding:12px;
-      border-radius:12px;
-      border:2px solid #cbd5e1;
-      font-size:16px;
-      transition:.25s;
-    }
-    input[type=text]:focus{
-      outline:none;
-      border-color:#6366f1;
-      box-shadow:0 0 0 4px rgba(99,102,241,.15);
-    }
+    .footer-stats{display:flex;gap:12px;margin-top:12px;align-items:center}
+    .small{font-size:13px;color:rgba(230,238,248,0.7)}
 
-    button{
-      margin-top:12px;
-      padding:12px 16px;
-      border-radius:12px;
-      border:0;
-      background:linear-gradient(90deg,#6366f1,#8b5cf6);
-      color:white;
-      font-weight:600;
-      cursor:pointer;
-      width:100%;
-      font-size:15px;
-      transition:.25s;
-    }
-    button:hover{opacity:.9; transform:translateY(-2px);}
-    button:active{transform:scale(0.97);}    
+    .result{font-size:16px;font-weight:700}
 
-    .meta{
-      display:flex;
-      justify-content:space-between;
-      margin-top:14px;
-      padding:8px 12px;
-      border-radius:12px;
-      background:#f8fafc;
-      color:#374151;
-      font-weight:600;
-    }
+    .center{display:flex;align-items:center;justify-content:center}
 
-    .small{font-size:14px;color:#6b7280;margin-top:6px;}
+    .history{max-height:220px;overflow:auto;padding-right:8px}
+    .round-item{padding:8px;border-radius:8px;margin-bottom:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02);display:flex;justify-content:space-between;align-items:center}
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      margin-top:14px;
-      background:white;
-      border-radius:12px;
-      overflow:hidden;
-    }
+    footer.note{margin-top:12px;font-size:13px;color:rgba(230,238,248,0.6)}
 
-    td,th{
-      padding:10px;
-      border-bottom:1px solid #e5e7eb;
-      font-size:14px;
-      text-align:left;
-    }
-
-    th{
-      background:#f1f5f9;
-      font-weight:700;
-    }
+    @media (max-width:880px){.grid{grid-template-columns:1fr}} 
   </style>
 </head>
 <body>
-  <div class="card" role="application">
-    <h1>Гра: Пам'ять чисел</h1>
-    <div class="small">Введіть своє ім'я (необов'язково), потім натисніть <strong>Почати</strong>.</div>
+  <div class="app" role="application">
+    <header>
+      <div class="logo">RS</div>
+      <div>
+        <h1>Переверни послідовність</h1>
+        <p class="lead">Дивись числа, потім введи їх у зворотному порядку. 5 рівнів — по 3 спроби на рівень.</p>
+      </div>
+    </header>
 
-    <div style="margin-top:10px">
-      <input id="name" type="text" placeholder="Ваше ім'я (наприклад, Іван)" />
+    <div class="grid">
+      <main class="card">
+        <div class="controls">
+          <label>Введіть ім'я гравця</label>
+          <input id="playerName" type="text" placeholder="Ваше ім'я (необов'язково)" />
+
+          <div style="display:flex;gap:10px;margin-top:8px">
+            <button id="startBtn" class="btn btn-primary">Почати гру</button>
+            <button id="resetBtn" class="btn btn-ghost">Перезапустити</button>
+          </div>
+        </div>
+
+        <div class="stage" style="margin-top:14px">
+          <div class="info-row">
+            <div class="pill">Рівень: <span id="level">—</span></div>
+            <div class="pill">Хід: <span id="round">—</span>/3</div>
+            <div class="pill">Довжина послідовності: <span id="len">—</span></div>
+          </div>
+
+          <div class="sequence-box" id="display">Натисніть «Почати гру»</div>
+
+          <div style="width:100%;display:flex;gap:8px;align-items:center">
+            <input id="answer" type="text" placeholder="Введіть відповідь тут" />
+            <button id="submitBtn" class="btn btn-primary">Відправити</button>
+          </div>
+
+          <div class="footer-stats">
+            <div class="small">Гравець: <span id="player">—</span></div>
+            <div class="small">Балів: <span id="score">0</span></div>
+            <div class="small">Приклад №: <span id="exampleIndex">—</span></div>
+          </div>
+        </div>
+
+      </main>
+
+      <aside class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div><strong>Прогрес</strong><div class="small">5 рівнів • 3 приклади / рівень</div></div>
+          <div class="small">Час показу: <span id="showTime">700ms</span></div>
+        </div>
+
+        <div class="history" id="history"></div>
+
+        <div style="margin-top:12px">
+          <div class="result" id="finalResult"></div>
+          <div class="note small">Після кожного прикладу ви отримаєте підсумок — правильно/неправильно і правильну відповідь.</div>
+        </div>
+      </aside>
     </div>
 
-    <div class="meta" style="margin-top:10px">
-      <div>Рівень: <span id="level">0</span>/5</div>
-      <div>Спроби: <span id="tries">0</span>/3</div>
-    </div>
-
-    <div id="display" aria-live="polite">—</div>
-
-    <div class="controls">
-      <input id="answer" type="text" placeholder="Введіть відповідь у зворотному порядку" disabled />
-      <button id="startBtn">Почати</button>
-      <button id="downloadBtn" style="display:none">Завантажити результати (Excel)</button>
-    </div>
-
-    <div id="message" class="small"></div>
-
-    <table id="resultsTable" style="display:none">
-      <thead>
-        <tr><th>Ім'я</th><th>Дата/час</th><th>Рівень досягнуто</th><th>Використані спроби</th><th>Результат</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
+    <footer class="note">Інструкція: дивіться числа по черзі. Вони з'являються і зникають — запам'ятайте порядок і введіть його у зворотному напрямку (наприклад показали 3,2,1 → введіть 123).</footer>
   </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-(function(){
-  const startBtn = document.getElementById('startBtn');
-  const display = document.getElementById('display');
-  const answerInput = document.getElementById('answer');
-  const levelEl = document.getElementById('level');
-  const triesEl = document.getElementById('tries');
-  const nameInput = document.getElementById('name');
-  const message = document.getElementById('message');
-  const resultsTable = document.getElementById('resultsTable');
-  const resultsBody = resultsTable.querySelector('tbody');
-  const downloadBtn = document.getElementById('downloadBtn');
+  <script>
+    // Game settings
+    const LEVELS = 5;
+    const EXAMPLES_PER_LEVEL = 3;
+    // sequence lengths per level (increase difficulty)
+    const SEQ_LENGTHS = [3,4,5,6,7];
+    const SHOW_MS = 700; // how long each number 'shines'
 
-  const MAX_LEVEL = 5;
-  const MAX_TRIES = 3;
+    // state
+    let state = {player:'', level:0, example:0, score:0, currentSeq:[], awaiting:false, history:[]};
 
-  let level = 0;
-  let tries = 0;
-  let sequence = [];
-  let attemptsUsed = 0;
-  let finished = false;
-  const history = []; // will store result rows
+    // elements
+    const playerName = document.getElementById('playerName');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const display = document.getElementById('display');
+    const levelEl = document.getElementById('level');
+    const roundEl = document.getElementById('round');
+    const lenEl = document.getElementById('len');
+    const answer = document.getElementById('answer');
+    const submitBtn = document.getElementById('submitBtn');
+    const playerEl = document.getElementById('player');
+    const scoreEl = document.getElementById('score');
+    const historyEl = document.getElementById('history');
+    const exampleIndexEl = document.getElementById('exampleIndex');
+    const finalResultEl = document.getElementById('finalResult');
+    const showTimeEl = document.getElementById('showTime');
 
-  function updateMeta(){
-    levelEl.textContent = level;
-    triesEl.textContent = tries;
-  }
+    showTimeEl.textContent = SHOW_MS + 'ms';
 
-  function randDigit(){ return Math.floor(Math.random()*9)+1; }
+    startBtn.addEventListener('click', startGame);
+    resetBtn.addEventListener('click', resetGame);
+    submitBtn.addEventListener('click', submitAnswer);
+    answer.addEventListener('keydown', (e)=>{if(e.key==='Enter') submitAnswer();});
 
-  function showSequence(seq){
-    display.textContent = '';
-    answerInput.value = '';
-    answerInput.disabled = true; // cannot input until last digit shown
-    message.textContent = 'Запам' + '\u2019' + 'ятайте послідовність...';
+    function startGame(){
+      state.player = playerName.value.trim() || 'Гравець';
+      state.level = 1;
+      state.example = 1;
+      state.score = 0;
+      state.history = [];
+      updateUI();
+      playerEl.textContent = state.player;
+      finalResultEl.textContent = '';
+      nextExample();
+    }
 
-    let i = 0;
-    function next(){
-      if(i < seq.length){
-        display.textContent = seq[i];
-        i++;
-        setTimeout(()=>{
-          display.textContent = '';
-          setTimeout(next, 400);
-        }, 800);
+    function resetGame(){
+      state = {player:'', level:0, example:0, score:0, currentSeq:[], awaiting:false, history:[]};
+      updateUI();
+      display.textContent = 'Натисніть «Почати гру»';
+      playerName.value = '';
+      playerEl.textContent = '—';
+      historyEl.innerHTML = '';
+      finalResultEl.textContent = '';
+      scoreEl.textContent = '0';
+    }
+
+    function updateUI(){
+      levelEl.textContent = state.level>0?state.level:'—';
+      roundEl.textContent = state.example>0?state.example:'—';
+      lenEl.textContent = state.level>0?SEQ_LENGTHS[state.level-1]:'—';
+      exampleIndexEl.textContent = ((state.level-1)*EXAMPLES_PER_LEVEL + state.example) || '—';
+      scoreEl.textContent = state.score;
+      answer.value = '';
+      answer.disabled = !state.awaiting;
+      submitBtn.disabled = !state.awaiting;
+    }
+
+    function nextExample(){
+      // check if finished
+      if(state.level > LEVELS){
+        finishGame();
+        return;
+      }
+
+      const seqLen = SEQ_LENGTHS[state.level-1];
+      const seq = Array.from({length:seqLen}, ()=>randomDigit(1,9));
+      state.currentSeq = seq;
+      state.awaiting = false;
+      updateUI();
+      playSequence(seq).then(()=>{
+        state.awaiting = true;
+        updateUI();
+        answer.focus();
+      });
+    }
+
+    function randomDigit(min,max){ return Math.floor(Math.random()*(max-min+1))+min }
+
+    async function playSequence(seq){
+      display.innerHTML = '';
+      // show each number, one by one
+      for(let i=0;i<seq.length;i++){
+        const d = seq[i];
+        display.innerHTML = `<div class="digit glow">${d}</div>`;
+        await wait(SHOW_MS);
+        // brief blank between numbers
+        display.innerHTML = '';
+        await wait(220);
+      }
+      display.textContent = 'Тепер введіть відповідь';
+    }
+
+    function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+
+    function submitAnswer(){
+      if(!state.awaiting) return;
+      const raw = answer.value.replace(/\s+/g,'');
+      if(!raw){alert('Введіть відповідь (наприклад 123)');answer.focus();return}
+      // expected is reverse of currentSeq
+      const expect = state.currentSeq.slice().reverse().join('');
+      const correct = raw === expect;
+      if(correct){state.score += 10}
+      state.history.push({level:state.level,example:state.example,seq:state.currentSeq.join(','),answer:raw,expect,correct});
+      addHistoryItem(state.history[state.history.length-1]);
+
+      // advance example/level
+      if(state.example < EXAMPLES_PER_LEVEL){ state.example += 1; }
+      else { state.level += 1; state.example = 1; }
+
+      state.awaiting = false;
+      updateUI();
+
+      // show brief feedback
+      displayFeedback(correct, expect);
+
+      // small delay then next example
+      setTimeout(()=>{
+        if(state.level > LEVELS){ finishGame(); }
+        else nextExample();
+      },800);
+    }
+
+    function displayFeedback(correct, expect){
+      if(correct){
+        display.innerHTML = `<div style="text-align:center"><div style="font-size:38px;font-weight:700;color:#9ef3d1">Правильно!</div><div class="small">Правильна відповідь: ${expect}</div></div>`;
       } else {
-        // sequence finished
-        display.textContent = '';
-        message.textContent = 'Тепер введіть послідовність у зворотному порядку.';
-        answerInput.disabled = false;
-        answerInput.focus();
+        display.innerHTML = `<div style="text-align:center"><div style="font-size:34px;font-weight:700;color:#ffb4b4">Неправильно</div><div class="small">Правильна відповідь: ${expect}</div></div>`;
       }
     }
-    next();
-  }
 
-  function startLevel(){
-    level++;
-    if(level>MAX_LEVEL){
-      finish(true);
-      return;
+    function addHistoryItem(item){
+      const el = document.createElement('div');
+      el.className = 'round-item';
+      el.innerHTML = `<div>Рівень ${item.level} • приклад ${item.example}</div><div style="text-align:right"><div style="font-weight:700">${item.correct? '✔':'✖'} ${item.answer}</div><div class="small">правильно: ${item.expect}</div></div>`;
+      historyEl.prepend(el);
     }
-    tries = 0;
-    updateMeta();
-    // generate 3 numbers each level
-    sequence = [randDigit(), randDigit(), randDigit()];
-    showSequence(sequence);
-  }
 
-  function finish(won){
-    finished = true;
-    answerInput.disabled = true;
-    startBtn.textContent = 'Почати знову';
-    downloadBtn.style.display = 'inline-block';
-
-    const row = {
-      name: nameInput.value.trim() || 'Анонім',
-      datetime: new Date().toLocaleString('uk-UA'),
-      levelReached: Math.min(level, MAX_LEVEL),
-      attemptsUsed: attemptsUsed,
-      result: won ? 'Успіх' : 'Поразка'
-    };
-    history.push(row);
-    renderResults();
-  }
-
-  function renderResults(){
-    resultsTable.style.display = 'table';
-    resultsBody.innerHTML = '';
-    history.forEach(r=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${escapeHtml(r.name)}</td><td>${r.datetime}</td><td>${r.levelReached}</td><td>${r.attemptsUsed}</td><td>${r.result}</td>`;
-      resultsBody.appendChild(tr);
-    });
-  }
-
-  function escapeHtml(s){ return s.replace(/[&<>\"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
-  answerInput.addEventListener('keydown', function(e){
-    if(e.key === 'Enter') checkAnswer();
-  });
-
-  function checkAnswer(){
-    if(answerInput.disabled) return;
-    const user = answerInput.value.replace(/\s+/g,'');
-    const correct = sequence.slice().reverse().join('');
-    attemptsUsed++;
-    if(user === correct){
-      message.textContent = 'Правильно! Переходьте до наступного рівня.';
-      if(level === MAX_LEVEL){
-        finish(true);
-      } else {
-        setTimeout(startLevel, 800);
-      }
-    } else {
-      tries++;
-      updateMeta();
-      message.textContent = `Неправильно. Залишилося спроб: ${MAX_TRIES - tries}`;
-      if(tries >= MAX_TRIES){
-        // fail this level -> game over
-        message.textContent = 'Ви вичерпали спроби. Гра завершена.';
-        finish(false);
-      } else {
-        // show same sequence again after short pause
-        answerInput.disabled = true;
-        setTimeout(()=>{ showSequence(sequence); }, 800);
-      }
+    function finishGame(){
+      display.innerHTML = `<div style="text-align:center"><div style="font-size:28px;font-weight:800">Гру завершено</div><div class="small">Балів: ${state.score}</div></div>`;
+      finalResultEl.textContent = `${state.player}, ваш рахунок: ${state.score} балів`; 
+      state.level = LEVELS+1;
+      state.awaiting = false;
+      updateUI();
     }
-  }
 
-  startBtn.addEventListener('click', function(){
-    if(finished){
-      // reset
-      level = 0; tries = 0; attemptsUsed = 0; finished = false;
-      history.length = 0; // optional: clear previous history
-      resultsTable.style.display = 'none';
-      downloadBtn.style.display = 'none';
-      message.textContent = '';
-      startBtn.textContent = 'Почати';
-    }
-    // begin
-    startBtn.disabled = true;
-    setTimeout(()=>{ startBtn.disabled = false; }, 500);
-    startLevel();
-  });
-
-  downloadBtn.addEventListener('click', function(){
-    if(history.length === 0) return;
-    const header = ["Ім'я","Дата/час","Рівень досягнуто","Використані спроби","Результат"];
-    const rows = [header].concat(history.map(r=>[r.name,r.datetime,r.levelReached,r.attemptsUsed,r.result]));
-    const csvRows = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(','));
-    const csv = csvRows.join("
-");
-    const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'memory_game_results.csv';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
-
-  // small helper to allow user to click a 'Submit' by pressing a button (not only Enter)
-  const submitBtn = document.createElement('button');
-  submitBtn.textContent = 'Підтвердити відповідь';
-  submitBtn.style.marginLeft = '8px';
-  submitBtn.addEventListener('click', checkAnswer);
-  document.querySelector('.controls').appendChild(submitBtn);
-
-})();
-});
-</script>
+    // initialize
+    resetGame();
+  </script>
 </body>
 </html>
